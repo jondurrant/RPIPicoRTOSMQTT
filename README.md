@@ -1,0 +1,2 @@
+# RPIPicoRTOSMQTT
+RPI Pico WIFI via ESP-01S, LWESP, FreeRTOS, and MQTT example

@@ -4,16 +4,54 @@
 #include "task.h"
 #include <array>
 #include "lwesp/lwesp.h"
+#include "MQTTConnTask.h"
+#include "MQTTRouterPing.h"
+#include "MQTTDebug.h"
 
 
 //Local include file not in git repository, defining the credentials
 #include "Credentials.env"
 #ifndef SID
 #define SID "sid"
-#endif
-#ifndef PASSWD
 #define PASSWD "passwd"
 #endif
+#ifndef MQTTHOST
+#define MQTTHOST "MQTTSERVER"
+#define MQTTPORT 1883
+#define MQTTUSER "USER"
+#define MQTTPASSWD "PASSWD"
+#endif
+
+
+
+
+
+
+//MQTTConnection mqttConn;
+MQTTConnTask mqttTask;
+MQTTRouterPing mqttRouter;
+
+
+char mqttTarget[] = MQTTHOST;
+char mqttUser[] = MQTTUSER;
+char mqttPwd[] = MQTTPASSWD;
+lwesp_port_t mqttPort = MQTTPORT;
+
+
+
+void startMQTT(){
+	printf("Starting MQTT\n");
+	dbg("TEST DBG");
+
+	mqttTask.credentials(mqttUser, mqttPwd);
+	mqttTask.setReconnect(false);
+	mqttRouter.init(mqttTask.getId());
+	mqttTask.setRouter(&mqttRouter);
+
+	mqttTask.start();
+	mqttTask.connect(mqttTarget, mqttPort);
+}
+
 
 
 
@@ -71,9 +109,10 @@ init_thread(void* pvParameters) {
 
 			 } else {
 				 printf("Connection error: %d\r\n", (int)eres);
+				 return;
 			 }
-
         }
+        startMQTT();
     }
     for (;;){
     	vTaskDelay(5000);

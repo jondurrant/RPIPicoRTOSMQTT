@@ -21,6 +21,7 @@ set(LWESP_OPTION_PORT_PATH      ${CMAKE_CURRENT_LIST_DIR}/src/port/lwesp)
 set(LWESP_OPTION_USER_CFG_FILE  ${CMAKE_CURRENT_LIST_DIR}/src/config/lwesp_opts.h)
 
 set(FREERTOS_PORT_PATH      ${CMAKE_CURRENT_LIST_DIR}/src/port/FreeRTOS)
+set(COREMQTT_PORT_PATH      ${CMAKE_CURRENT_LIST_DIR}/src/port/CoreMQTT)
 
 add_subdirectory(src)
 
@@ -28,13 +29,8 @@ add_subdirectory(src)
 # Include required libraries
 include("lib/FreeRTOS-Kernel.cmake")
 include("lib/lwesp.cmake")
-#include("lib/FreeRTOS-coreMQTT.cmake")
-#include("lib/FreeRTOS-coreMQTT-Agent.cmake")
-
-
-# create map/bin/hex file etc.
-#pico_add_extra_outputs(${NAME})
-
+include("lib/FreeRTOS-coreMQTT.cmake")
+#include("lib/dbg.cmake")
 
 
 

@@ -4,3 +4,9 @@
 [submodule "lib/FreeRTOS-Kernel"]
 	path = lib/FreeRTOS-Kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel
+[submodule "lib/coreMQTT"]
+	path = lib/coreMQTT
+	url = https://github.com/FreeRTOS/coreMQTT
+[submodule "lib/dbg-macro"]
+	path = lib/dbg-macro
+	url = https://github.com/sharkdp/dbg-macro

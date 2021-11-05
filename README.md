@@ -60,6 +60,18 @@ main.cpp include "Credentials.env" for the Wifi AP name and passwd, MQTT Host, P
 #define MQTTPASSWD "PWD"
 ```
 
+
+## To build:
+``` bash
+cd RPIPicoRTOSMQTT
+mkdir build
+cd build
+cmake ..
+make
+make install (only work if you used my config setup in the Pico Intro course as does SWD upload of code direct from make).
+```
+
+
 # MQTT Server
 I'm using Mosquitto on a RPI. Followed the docker install guide at: https://docs.cedalo.com/streamsheets/2.4/installation/
 

@@ -31,6 +31,8 @@
 #define MQTTCMDQUEUELEN 10
 //Reconnect time out
 #define MQTTRECONDELAY 5000
+//Time will wait for ack before forcing state, ms
+#define MQTTACKWAITMS 5000
 
 
 enum MQTTState {  Offline, OK, Wait, Ack, Recv};
@@ -194,6 +196,7 @@ protected:
 	//Needed so we will wait for acks
 	uint16_t packetId = 0;
 	MQTTState mqttState = OK;
+	uint32_t mqttStateOk = 0;
 
 };
 

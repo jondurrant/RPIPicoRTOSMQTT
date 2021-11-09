@@ -187,8 +187,7 @@ void MQTTConnection::connActive(NetConnection * c){
  * @return
  */
 lwespr_t MQTTConnection::close(){
-	//TODO
-	return lwespOK;
+	return tcpConn.close();
 }
 
 

@@ -108,6 +108,18 @@ void MQTTConnTask::run(){
 
 	for( ;; ){
 
+		//Make sure we don't get stuck in a weight state more more than MQTTACKWAITMS
+		if (isOnline()){
+			if (mqttState == OK){
+				mqttStateOk = xMQTTConn.getCurrentTime();
+			} else {
+				if ( (xMQTTConn.getCurrentTime() - mqttStateOk) > MQTTACKWAITMS){
+					mqttState = OK;
+					mqttStateOk = xMQTTConn.getCurrentTime();
+				}
+			}
+		}
+
 		if (mqttState == OK){ //Make sure we wait for acks
 			if (uxQueueMessagesWaiting(xCmdQueue)> 0){
 				if( xQueueReceive( xCmdQueue,
@@ -167,6 +179,11 @@ void MQTTConnTask::run(){
 							break;
 						}
 						case Close: {
+							if (xMQTTConn.close() == lwespOK ){
+								res = MQTTSuccess;
+							} else {
+								res = MQTTServerRefused;
+							}
 							break;
 						}
 						case Reconn:{
@@ -269,12 +286,16 @@ void MQTTConnTask::addCmd(MQTTCommand *cmd){
  * Observer function called when connection closes
  */
 void MQTTConnTask::connClosed(){
-	mqttState = Offline;
+	mqttState = OK;
 	packetId=0;
 	dbg("MQTT Connection closed\n");
 	if (isReconnect()){
 		MQTTCommand cmd(Reconn);
-		addCmd(&cmd);
+		xQueueSendToFront( xCmdQueue,
+		            ( void * ) &cmd,
+		            ( TickType_t ) 10
+				);
+		mqttState  = OK;
 	}
 
 }
@@ -308,7 +329,7 @@ void MQTTConnTask::pubToTopic(const char * topic, const void * payload, size_t p
 	if (fl < PUBTRANBUFFER){
 		if (xSemPubTransBuf != NULL){
 			if (xSemaphoreTake( xSemPubTransBuf, ( TickType_t ) 10 ) == pdTRUE ){
-				void *target = (void *)xPubTransBuf;
+				uint8_t  *target = (uint8_t  *)xPubTransBuf;
 				memcpy(target, topic, tl);
 				target+= tl;
 				memcpy(target, payload, payloadLen);
@@ -333,7 +354,9 @@ void MQTTConnTask::pubToTopic(const char * topic, const void * payload, size_t p
  * Close connection
  */
 void MQTTConnTask::close(){
-	//TODO
+	setReconnect(false);
+	MQTTCommand cmd(Close);
+	addCmd(&cmd);
 }
 
 /***
@@ -385,7 +408,11 @@ void MQTTConnTask::connError(){
 	packetId=0;
 	if (isReconnect()){
 		MQTTCommand cmd(Reconn);
-		addCmd(&cmd);
+		xQueueSendToFront( xCmdQueue,
+				            ( void * ) &cmd,
+				            ( TickType_t ) 10
+						);
+		mqttState  = OK;
 	}
 }
 

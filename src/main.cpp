@@ -44,13 +44,14 @@ void startMQTT(){
 	dbg("TEST DBG");
 
 	mqttTask.credentials(mqttUser, mqttPwd);
-	mqttTask.setReconnect(false);
+	mqttTask.setReconnect(true);
 	mqttRouter.init(mqttTask.getId());
 	mqttTask.setRouter(&mqttRouter);
 
 	mqttTask.start();
 	mqttTask.connect(mqttTarget, mqttPort);
 }
+
 
 
 

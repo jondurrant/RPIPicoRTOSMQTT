@@ -51,7 +51,7 @@ size_t MQTTRouterPing::getSubscriptionCount(){
 
 void MQTTRouterPing::route(const char *topic, size_t topicLen, const void * payload, size_t payloadLen, MQTTInterface *interface){
 
-	dbg("MQTTRouterPing(%s, %s)\n",topic, (char *)payload);
+	dbg("MQTTRouterPing(%.*s[%d]: %.*s[%d])\n",topicLen, topic, topicLen, payloadLen, (char *)payload, payloadLen);
 	if (strlen(pingTopic) == topicLen){
 		if (memcmp(topic, pingTopic, topicLen)==0){
 			interface->pubToTopic(pongTopic, payload, payloadLen);

@@ -27,6 +27,15 @@ lwespr_t TCPConnection::connect(const char * target, lwesp_port_t  port) {
 	this->target = target;
 	this->port = port;
 
+	if (xSemRecBuf == NULL){
+		xSemRecBuf = xSemaphoreCreateBinary();
+	}
+	if (xSemRecBuf == NULL){
+		dbg("TCPConnection Sem not created");
+		return lwespERR;
+	}
+	xSemaphoreGive(xSemRecBuf);
+
 	dbg("TCPConnection::connect(%s, %d)", target, port);
 
 	res = lwesp_conn_start(&conn, LWESP_CONN_TYPE_TCP,
@@ -113,8 +122,11 @@ lwespr_t TCPConnection::connEvt(lwesp_evt_t *evt) {
 		break;
 	}
 	case LWESP_EVT_CONN_RECV: { /* Data received from remote side */
+			xSemaphoreTakeFromISR(xSemRecBuf, NULL);
 			recBuf = lwesp_evt_conn_recv_get_buff(evt);
 			bufLen = lwesp_pbuf_length(recBuf, 1);
+			xSemaphoreGiveFromISR(xSemRecBuf, NULL);
+			//dbg("CONN_RECV %d\n", bufLen);
 			std::list<TCPConnectionObserver *>::iterator iterator = observers.begin();
 			while (iterator != observers.end()) {
 			  (*iterator)->dataRecv(this);
@@ -171,7 +183,13 @@ int32_t TCPConnection::recv(char * pBuffer,size_t bytesToRecv ){
 	size_t dLen = 0;
 	void* data;
 
+	if(xSemaphoreTake(xSemRecBuf, ( TickType_t ) 10) != pdTRUE){
+		return 0;
+	}
 	len = lwesp_pbuf_length(recBuf, 1);
+	if (len == 0){
+		return len;
+	}
 	dLen = lwesp_pbuf_copy(recBuf, pBuffer, bytesToRecv, bufCount);
 	bufCount += dLen;
 
@@ -181,6 +199,8 @@ int32_t TCPConnection::recv(char * pBuffer,size_t bytesToRecv ){
 		bufCount = 0;
 		recBuf = NULL;
 	}
+
+	xSemaphoreGive(xSemRecBuf);
 	return dLen;
 }
 

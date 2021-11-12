@@ -16,6 +16,7 @@
 #include "NetConnection.h"
 #include "TCPConnectionObserver.h"
 #include <list>
+#include <semphr.h>
 
 class TCPConnection : public NetConnection{
 public:
@@ -101,6 +102,8 @@ private:
 	//Host and port address cached for reconnect
 	const char * target;
 	lwesp_port_t  port;
+
+	SemaphoreHandle_t  xSemRecBuf = NULL;
 
 };
 

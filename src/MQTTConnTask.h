@@ -21,6 +21,8 @@
 #include "MQTTRouter.h"
 #include "MQTTInterface.h"
 
+#define MQTTDEBUGSTATS
+
 
 //TODO move parameters into a config file for lib version
 //Publish buffer length
@@ -180,6 +182,8 @@ protected:
 	void errorHandling(const char * msg);
 
 
+
+
 	QueueHandle_t xCmdQueue;
 	TaskHandle_t xHandle = NULL;
 	MQTTConnection xMQTTConn;
@@ -197,6 +201,12 @@ protected:
 	uint16_t packetId = 0;
 	MQTTState mqttState = OK;
 	uint32_t mqttStateOk = 0;
+
+private:
+#ifdef MQTTDEBUGSTATS
+	char debugStats[250] ;
+	void runDebugStats();
+#endif
 
 };
 

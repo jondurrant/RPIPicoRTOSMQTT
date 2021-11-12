@@ -103,10 +103,24 @@ void MQTTConnTask::run(){
 	MQTTCommand cmd;
 	const MQTTSubscribeInfo_t * pSubscriptionList;
 	size_t subscriptionCount;
+	int i=0;
 
 	//dbg("Initial State=%d\n", mqttState);
 
 	for( ;; ){
+
+#ifdef MQTTDEBUGSTATS
+		if (i >= 300){
+			runDebugStats();
+			i=0;
+		} else {
+			i++;
+		}
+
+#endif
+		if (isOnline()){
+			xMQTTConn.MQTTprocess();
+		}
 
 		//Make sure we don't get stuck in a weight state more more than MQTTACKWAITMS
 		if (isOnline()){
@@ -121,28 +135,29 @@ void MQTTConnTask::run(){
 		}
 
 		if (mqttState == OK){ //Make sure we wait for acks
+			processQueue();
 			if (uxQueueMessagesWaiting(xCmdQueue)> 0){
 				if( xQueueReceive( xCmdQueue,
 					 &cmd, ( TickType_t ) 10 ) == pdPASS ){
 					switch(cmd.getCmd()){
 						case Init:{
-							dbg("Init Cmd received\n");
+							//dbg("Init Cmd received\n");
 							res = xMQTTConn.MQTTinit(this);
 							break;
 						}
 						case TCPConn: {
-							dbg("TCPConn Cmd received\n");
+							//dbg("TCPConn Cmd received\n");
 							res = xMQTTConn.TCPconn();
 
 							break;
 						}
 						case Conn: {
-							dbg("MQTT Conn Cmd received\n");
+							//dbg("MQTT Conn Cmd received\n");
 							res = xMQTTConn.MQTTconn();
 							break;
 						}
 						case Pub: {
-							dbg("MQTT Pub command\n");
+							//dbg("MQTT Pub command\n");
 							if (xSemPubTransBuf != NULL){
 								if( xSemaphoreTake( xSemPubTransBuf, ( TickType_t ) 10 ) == pdTRUE ){
 									size_t size = xMessageBufferReceive(  xPublishBuffer,
@@ -166,7 +181,7 @@ void MQTTConnTask::run(){
 							break;
 						}
 						case Sub: {
-							dbg("Subscribing to router list\n");
+							//dbg("Subscribing to router list\n");
 							if (pRouter != NULL){
 								pSubscriptionList = pRouter->getSubscriptionList();
 								subscriptionCount = pRouter->getSubscriptionCount();
@@ -197,7 +212,7 @@ void MQTTConnTask::run(){
 						}
 					}
 
-
+					/*
 					switch(res){
 							case MQTTSuccess:{
 								dbg("succeeded\n");
@@ -219,6 +234,7 @@ void MQTTConnTask::run(){
 								dbg("Other result %d\n", res);
 							}
 					}
+					*/
 				}
 			}
 		}
@@ -423,7 +439,7 @@ void MQTTConnTask::connError(){
 */
 void MQTTConnTask::mqttAck(uint16_t pkt){
 	if (pkt == packetId){
-		dbg("Packet Ack\n");
+		//dbg("Packet Ack\n");
 		packetId = 0;
 		mqttState = Ack;
 		//dbg("State=%d\n", mqttState);
@@ -438,4 +454,15 @@ void MQTTConnTask::mqttAck(uint16_t pkt){
 bool MQTTConnTask::isOnline(){
 	return (mqttState != Offline);
 }
+
+
+
+#ifdef MQTTDEBUGSTATS
+void MQTTConnTask::runDebugStats(){
+	//vTaskGetRunTimeStats(debugStats);
+	//printf("%s\n", debugStats);
+	unsigned int hwm = uxTaskGetStackHighWaterMark(NULL);
+	printf("High Water %d\n", hwm);
+}
+#endif
 

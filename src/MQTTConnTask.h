@@ -181,7 +181,7 @@ protected:
 	 */
 	void errorHandling(const char * msg);
 
-
+	void processQueue();
 
 
 	QueueHandle_t xCmdQueue;

@@ -99,10 +99,7 @@ lwespr_t MQTTConnTask::connect(char * target, lwesp_port_t  port, bool ssl){
 * Internal function to run the task from within the object
 */
 void MQTTConnTask::run(){
-	MQTTStatus_t res;
-	MQTTCommand cmd;
-	const MQTTSubscribeInfo_t * pSubscriptionList;
-	size_t subscriptionCount;
+
 	int i=0;
 
 	//dbg("Initial State=%d\n", mqttState);
@@ -118,9 +115,7 @@ void MQTTConnTask::run(){
 		}
 
 #endif
-		if (isOnline()){
-			xMQTTConn.MQTTprocess();
-		}
+
 
 		//Make sure we don't get stuck in a weight state more more than MQTTACKWAITMS
 		if (isOnline()){
@@ -130,113 +125,13 @@ void MQTTConnTask::run(){
 				if ( (xMQTTConn.getCurrentTime() - mqttStateOk) > MQTTACKWAITMS){
 					mqttState = OK;
 					mqttStateOk = xMQTTConn.getCurrentTime();
+					dbg("EXCEEDED ACK WAIT");
 				}
 			}
 		}
 
 		if (mqttState == OK){ //Make sure we wait for acks
 			processQueue();
-			if (uxQueueMessagesWaiting(xCmdQueue)> 0){
-				if( xQueueReceive( xCmdQueue,
-					 &cmd, ( TickType_t ) 10 ) == pdPASS ){
-					switch(cmd.getCmd()){
-						case Init:{
-							//dbg("Init Cmd received\n");
-							res = xMQTTConn.MQTTinit(this);
-							break;
-						}
-						case TCPConn: {
-							//dbg("TCPConn Cmd received\n");
-							res = xMQTTConn.TCPconn();
-
-							break;
-						}
-						case Conn: {
-							//dbg("MQTT Conn Cmd received\n");
-							res = xMQTTConn.MQTTconn();
-							break;
-						}
-						case Pub: {
-							//dbg("MQTT Pub command\n");
-							if (xSemPubTransBuf != NULL){
-								if( xSemaphoreTake( xSemPubTransBuf, ( TickType_t ) 10 ) == pdTRUE ){
-									size_t size = xMessageBufferReceive(  xPublishBuffer,
-											xPubTransBuf, PUBTRANBUFFER, 0);
-									if (size > 0){
-										int l = strlen(xPubTransBuf) + 1;
-										void *p = (void *)(xPubTransBuf + l);
-										l = size - l;
-										dbg("Publishing >%s:%.*s< %d\n",xPubTransBuf,l, (char *)p, l);
-										res = xMQTTConn.pubToTopic(xPubTransBuf, p, l, packetId);
-									} else {
-										dbg("ERROR MQTTConnTask data missing from buffer\n");
-									}
-									xSemaphoreGive(xSemPubTransBuf);
-									if (res == MQTTSuccess){
-										mqttState = Wait;
-									}
-								}
-							}
-							//dbg("State=%d\n", mqttState);
-							break;
-						}
-						case Sub: {
-							//dbg("Subscribing to router list\n");
-							if (pRouter != NULL){
-								pSubscriptionList = pRouter->getSubscriptionList();
-								subscriptionCount = pRouter->getSubscriptionCount();
-								res = xMQTTConn.subscribe(pSubscriptionList, subscriptionCount, packetId );
-								if (res == MQTTSuccess){
-									mqttState = Wait;
-								}
-							}
-							//dbg("State=%d\n", mqttState);
-							break;
-						}
-						case Close: {
-							if (xMQTTConn.close() == lwespOK ){
-								res = MQTTSuccess;
-							} else {
-								res = MQTTServerRefused;
-							}
-							break;
-						}
-						case Reconn:{
-							vTaskDelay(pdMS_TO_TICKS(MQTTRECONDELAY));
-							MQTTCommand cmd(TCPConn);
-							addCmd(&cmd);
-							break;
-						}
-						default:{
-
-						}
-					}
-
-					/*
-					switch(res){
-							case MQTTSuccess:{
-								dbg("succeeded\n");
-								break;
-							}
-							case MQTTBadParameter :{
-								dbg("bad param\n");
-								break;
-							}
-							case MQTTNoDataAvailable :{
-								dbg("MQTTNoDataAvailable\n");
-								break;
-							}
-							case MQTTServerRefused :{
-								dbg("MQTTServerRefused\n");
-								break;
-							}
-							default:{
-								dbg("Other result %d\n", res);
-							}
-					}
-					*/
-				}
-			}
 		}
 
 		if (isOnline()){
@@ -252,6 +147,120 @@ void MQTTConnTask::run(){
 	}
 
 }
+
+
+
+void MQTTConnTask::processQueue(){
+	MQTTStatus_t res;
+	MQTTCommand cmd;
+	const MQTTSubscribeInfo_t * pSubscriptionList;
+	size_t subscriptionCount;
+
+	if (uxQueueMessagesWaiting(xCmdQueue)> 0){
+		if( xQueueReceive( xCmdQueue,
+			 &cmd, ( TickType_t ) 10 ) == pdPASS ){
+			switch(cmd.getCmd()){
+				case Init:{
+					//dbg("Init Cmd received\n");
+					res = xMQTTConn.MQTTinit(this);
+					break;
+				}
+				case TCPConn: {
+					//dbg("TCPConn Cmd received\n");
+					res = xMQTTConn.TCPconn();
+
+					break;
+				}
+				case Conn: {
+					//dbg("MQTT Conn Cmd received\n");
+					res = xMQTTConn.MQTTconn();
+					break;
+				}
+				case Pub: {
+					//dbg("MQTT Pub command\n");
+					//Make sure any pending ACKs are sent
+					xMQTTConn.MQTTprocess();
+					if (xSemPubTransBuf != NULL){
+						if( xSemaphoreTake( xSemPubTransBuf, ( TickType_t ) 10 ) == pdTRUE ){
+							size_t size = xMessageBufferReceive(  xPublishBuffer,
+									xPubTransBuf, PUBTRANBUFFER, 0);
+							if (size > 0){
+								int l = strlen(xPubTransBuf) + 1;
+								void *p = (void *)(xPubTransBuf + l);
+								l = size - l;
+								dbg("Publishing >%s:%.*s< %d\n",xPubTransBuf,l, (char *)p, l);
+								res = xMQTTConn.pubToTopic(xPubTransBuf, p, l, packetId);
+							} else {
+								dbg("ERROR MQTTConnTask data missing from buffer\n");
+							}
+							xSemaphoreGive(xSemPubTransBuf);
+							if (res == MQTTSuccess){
+								mqttState = Wait;
+							}
+						}
+					}
+					//dbg("State=%d\n", mqttState);
+					break;
+				}
+				case Sub: {
+					//dbg("Subscribing to router list\n");
+					if (pRouter != NULL){
+						pSubscriptionList = pRouter->getSubscriptionList();
+						subscriptionCount = pRouter->getSubscriptionCount();
+						res = xMQTTConn.subscribe(pSubscriptionList, subscriptionCount, packetId );
+						if (res == MQTTSuccess){
+							mqttState = Wait;
+						}
+					}
+					//dbg("State=%d\n", mqttState);
+					break;
+				}
+				case Close: {
+					if (xMQTTConn.close() == lwespOK ){
+						res = MQTTSuccess;
+					} else {
+						res = MQTTServerRefused;
+					}
+					break;
+				}
+				case Reconn:{
+					vTaskDelay(pdMS_TO_TICKS(MQTTRECONDELAY));
+					MQTTCommand cmd(TCPConn);
+					addCmd(&cmd);
+					break;
+				}
+				default:{
+
+				}
+			}
+
+			/*
+			switch(res){
+					case MQTTSuccess:{
+						dbg("succeeded\n");
+						break;
+					}
+					case MQTTBadParameter :{
+						dbg("bad param\n");
+						break;
+					}
+					case MQTTNoDataAvailable :{
+						dbg("MQTTNoDataAvailable\n");
+						break;
+					}
+					case MQTTServerRefused :{
+						dbg("MQTTServerRefused\n");
+						break;
+					}
+					default:{
+						dbg("Other result %d\n", res);
+					}
+			}
+			*/
+		}
+	}
+}
+
 
 /***
  * Observer function when the tcp connection is activated, used to trigger next step

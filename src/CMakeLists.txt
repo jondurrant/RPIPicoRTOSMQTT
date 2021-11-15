@@ -11,6 +11,7 @@ add_executable(${NAME}
         MQTTRouter.cpp
         MQTTConnTask.cpp
         MQTTRouterPing.cpp
+        MQTTPingTask.cpp
         MQTTDebug.cpp
         )
 

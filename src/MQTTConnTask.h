@@ -194,7 +194,6 @@ protected:
 	char xPubTransBuf[PUBTRANBUFFER];
 	SemaphoreHandle_t xSemPubTransBuf = NULL;
 
-
 	static const char *  LIFECYCLE_TOPIC;
 
 	//Needed so we will wait for acks

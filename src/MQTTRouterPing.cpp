@@ -18,11 +18,11 @@ const char * MQTTRouterPing::PONGTOPIC = "TNG/%s/TPC/PONG";
 MQTTRouterPing::MQTTRouterPing() {
 }
 
-MQTTRouterPing::MQTTRouterPing(const char * id) {
-	init(id);
+MQTTRouterPing::MQTTRouterPing(const char * id, MQTTInterface *mi) {
+	init(id, mi);
 }
 
-void MQTTRouterPing::init(const char * id) {
+void MQTTRouterPing::init(const char * id, MQTTInterface *mi) {
 	this->id = id;
 
 	sprintf(pingTopic, PINGTOPIC, id);
@@ -32,6 +32,9 @@ void MQTTRouterPing::init(const char * id) {
 	subscriptions[ 0 ].pTopicFilter = pingTopic;
 	subscriptions[ 0 ].topicFilterLength = strlen( pingTopic );
 
+	pingTask.setPongTopic(pongTopic);
+	pingTask.setInterface(mi);
+	pingTask.start();
 
 }
 
@@ -54,7 +57,11 @@ void MQTTRouterPing::route(const char *topic, size_t topicLen, const void * payl
 	dbg("MQTTRouterPing(%.*s[%d]: %.*s[%d])\n",topicLen, topic, topicLen, payloadLen, (char *)payload, payloadLen);
 	if (strlen(pingTopic) == topicLen){
 		if (memcmp(topic, pingTopic, topicLen)==0){
+
+			/*
 			interface->pubToTopic(pongTopic, payload, payloadLen);
+			*/
+			pingTask.addPing(payload, payloadLen);
 		}
 	}
 }

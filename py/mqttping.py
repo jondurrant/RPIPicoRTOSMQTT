@@ -56,7 +56,7 @@ while True:
     infot = client.publish(ping_topic, p,retain=False, qos=1)
     infot.wait_for_publish()
     pingId = pingId + 1
-    time.sleep(0.2)
+    time.sleep(0.5)
 
 # Blocking call that processes network traffic, dispatches callbacks and
 # handles reconnecting.

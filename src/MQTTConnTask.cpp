@@ -40,7 +40,7 @@ void MQTTConnTask::start(UBaseType_t priority){
 		return;
 	}
 	xSemPubTransBuf = xSemaphoreCreateBinary();
-	if (xCmdQueue == NULL){
+	if (xSemPubTransBuf == NULL){
 		errorHandling("ERROR No MQTTConnTask xSemPubTransBuf");
 		return;
 	}
@@ -234,10 +234,14 @@ void MQTTConnTask::processQueue(){
 				}
 			}
 
-			/*
+
 			switch(res){
 					case MQTTSuccess:{
-						dbg("succeeded\n");
+						//dbg("succeeded\n");
+						break;
+					}
+					case MQTTNoMemory:{
+						dbg("MQTTNoMemory");
 						break;
 					}
 					case MQTTBadParameter :{
@@ -256,7 +260,7 @@ void MQTTConnTask::processQueue(){
 						dbg("Other result %d\n", res);
 					}
 			}
-			*/
+
 		}
 	}
 }

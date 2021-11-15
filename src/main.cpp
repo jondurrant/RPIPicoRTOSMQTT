@@ -45,10 +45,10 @@ void startMQTT(){
 
 	mqttTask.credentials(mqttUser, mqttPwd);
 	mqttTask.setReconnect(true);
-	mqttRouter.init(mqttTask.getId());
+	mqttRouter.init(mqttTask.getId(), &mqttTask);
 	mqttTask.setRouter(&mqttRouter);
 
-	mqttTask.start();
+	mqttTask.start(tskIDLE_PRIORITY);
 	mqttTask.connect(mqttTarget, mqttPort);
 }
 

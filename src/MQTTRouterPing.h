@@ -11,16 +11,18 @@
 #define MQTTROUTERPING_H_
 
 #include "MQTTRouter.h"
+#include "MQTTPingTask.h"
+#include "MQTTInterface.h"
 
 #define SUBSCRIPTIONS 1
 
 class MQTTRouterPing : public MQTTRouter{
 public:
 	MQTTRouterPing();
-	MQTTRouterPing(const char * id);
+	MQTTRouterPing(const char * id, MQTTInterface *mi);
 	virtual ~MQTTRouterPing();
 
-	virtual void init(const char * id);
+	virtual void init(const char * id, MQTTInterface *mi);
 
 	virtual MQTTSubscribeInfo_t * getSubscriptionList();
 	virtual size_t getSubscriptionCount();
@@ -31,6 +33,7 @@ private:
 	MQTTSubscribeInfo_t subscriptions[SUBSCRIPTIONS];
 	const char * id;
 
+	MQTTPingTask pingTask;
 
 
 

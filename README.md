@@ -5,6 +5,8 @@ Demo code for RPI Pico using ESP-01S for wifi connection over uart. With MQTT cl
 
 Nothing clever in the code just wrapping the libraries into some C++ classes and domonstrating working example.
 
+Stability of this example is not as good as I would like. Client dies with message rate above 10per second. Recomend looking at the alternative RPIPicoRTOMQTT3 version which uses the lwesp library for MQTT and runs more stably.
+
 # Hardware
 + Raspberry Pico
 + ESP-01S (1Mb) running ESP-AT 2.1

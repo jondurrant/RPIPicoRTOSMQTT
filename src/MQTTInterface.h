@@ -30,7 +30,7 @@ public:
 	 * @param payload - payload as pointer to memory block
 	 * @param payloadLen - length of memory block
 	 */
-	virtual void pubToTopic(const char * topic, const void * payload, size_t payloadLen)=0;
+	virtual MQTTStatus_t pubToTopic(const char * topic, const void * payload, size_t payloadLen)=0;
 
 	/***
 	 * Close connection

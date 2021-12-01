@@ -142,7 +142,6 @@ void MQTTConnTask::run(){
 			xMQTTConn.MQTTprocess();
 		}
 
-
 		taskYIELD();
 	}
 

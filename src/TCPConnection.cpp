@@ -126,7 +126,20 @@ lwespr_t TCPConnection::connEvt(lwesp_evt_t *evt) {
 			recBuf = lwesp_evt_conn_recv_get_buff(evt);
 			bufLen = lwesp_pbuf_length(recBuf, 1);
 			xSemaphoreGiveFromISR(xSemRecBuf, NULL);
-			//dbg("CONN_RECV %d\n", bufLen);
+
+			//DEBUG
+			/**
+			dbg("CONN_RECV %d\n", bufLen);
+			uint8_t * pb = (uint8_t *)recBuf;
+			for (int i=0; i < bufLen; i++){
+				printf("%x.", pb[i]);
+				if ((i%30) == 0){
+					printf("\n");
+				}
+			}
+			printf("\n");
+			**/
+
 			std::list<TCPConnectionObserver *>::iterator iterator = observers.begin();
 			while (iterator != observers.end()) {
 			  (*iterator)->dataRecv(this);

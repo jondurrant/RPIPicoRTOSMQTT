@@ -49,7 +49,7 @@ p = json.dumps(j)
 client.publish(connected_topic,p,retain=False,qos=1)
 
 pingId = 0;
-while True:
+for i in range(5):
     j = {'id': pingId}
     p = json.dumps(j)
     print("Publishing ping %s"%p)
